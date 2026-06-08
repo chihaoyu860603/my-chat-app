@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>我的第一個即時聊天室</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 20px; background: #f0f2f5; }
+        #chat-container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #messages { list-style-type: none; padding: 0; height: 300px; overflow-y: auto; border: 1px solid #ddd; margin-bottom: 10px; background: #fff; padding: 10px; }
+        #messages li { padding: 8px; margin-bottom: 4px; background: #e4e6eb; border-radius: 4px; }
+        #form { display: flex; }
+        #input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; outline: none; }
+        #send-btn { padding: 10px 20px; background: #0084ff; color: white; border: none; border-radius: 4px; margin-left: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div id="chat-container">
+    <h2>🚀 即時聊天室</h2>
+    <ul id="messages"></ul> <form id="form" action="">
+        <input id="input" autocomplete="off" placeholder="輸入訊息..." />
+        <button id="send-btn">傳送</button>
+    </form>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+
+    // 🌟 新增：一進網頁，立刻彈出視窗詢問使用者名字
+    // prompt() 是瀏覽器內建的功能，會跳出輸入框。如果沒輸入，就預設叫 "神祕路人"
+    const username = prompt("請輸入您的聊天暱稱：") || "神祕路人";
+
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const messages = document.getElementById('messages');
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (input.value) {
+            // 🌟 修改：以前只傳送單純的字串（input.value）
+            // 現在我們改成傳送一個「物件 (Object)」，把「名字」和「訊息內容」包在一起送過去！
+            const messageData = {
+                user: username,
+                text: input.value
+            };
+            
+            // 把這包完整的資料發送給後端
+            socket.emit('chat message', messageData);
+            input.value = '';
+        }
+    });
+
+    // 接收來自後端廣播的訊息
+    socket.on('chat message', (data) => {
+        const item = document.createElement('li');
+        
+        // 🌟 修改：因為後端傳回來的 data 變成包含名字的物件了
+        // 我們把畫面顯示改成： 「名字：訊息內容」
+        item.textContent = `${data.user}: ${data.text}`;
+        
+        // 如果這條訊息是「我自己」發的，我們可以加個粗體讓它比較明顯（選做，增加質感）
+        if (data.user === username) {
+            item.style.fontWeight = 'bold';
+            item.style.background = '#d2e3fc'; // 自己的訊息變成淡淡的藍色背景
+        }
+
+        messages.appendChild(item);
+        messages.scrollTop = messages.scrollHeight;
+    });
+</script>
+</body>
+</html>
